@@ -1,4 +1,5 @@
 // https://peter.sh/experiments/chromium-command-line-switches/
+// https://chromedevtools.github.io/devtools-protocol/tot/Network/
 
 // Success response
 // switch (result.result.type) {
@@ -401,7 +402,7 @@ export class ChromeClient {
   /**
    * Close/stop the sub process, and close the ws connection. Must be called when finished with all your testing
    */
-  public async done(): Promise<void> {
+  public async done(errMsg?: string): Promise<void> {
     // [Dirty fix 1] Dirty hack... There is a bug with WS API that causes async ops. I (ed) have found that closing the conn inside the message handler fixes it, which is why we are trigger a message here, so the `onmessage` handler can close the connection
     if (this.socket.readyState !== 3) { // Conditional here, as this method cna be called by the assertion methods, so if an assertion method has failed, and the user calls `.done()`, we wont try close an already close websocket
       const p = deferred();
@@ -419,6 +420,9 @@ export class ChromeClient {
       this.browser_process.stderr!.close();
       this.browser_process.close();
       this.browser_process_closed = true;
+    }
+    if (errMsg) {
+      throw new Error(errMsg);
     }
   }
 
@@ -447,6 +451,40 @@ export class ChromeClient {
     };
     if ("exceptionDetails" in res) {
       this.checkForErrorResult(res, command);
+    }
+  }
+
+  /**
+   * Set a cookie for the `url`. Will be passed across 'sessions' based
+   * from the `url`
+   *
+   * @param name - Name of the cookie, eg X-CSRF-TOKEN
+   * @param value - Value to assign to the cookie name, eg "some cryptic token"
+   * @param url - The domain to assign the cookie to, eg "https://drash.land"
+   *
+   * @example
+   * ```ts
+   * await Sinco.setCookie("X-CSRF-TOKEN", "abc123", "https://drash.land")
+   * const result = await Sinco.evaluatePage(`document.cookie`) // "X-CSRF-TOKEN=abc123"
+   * ```
+   */
+  public async setCookie(
+    name: string,
+    value: string,
+    url: string,
+  ): Promise<void> {
+    const res = await this.sendWebSocketMessage("Network.setCookie", {
+      name,
+      value,
+      url,
+    }) as ({ // if error response. only encountered when I (ed) tried to send a message without passing in a url prop
+      code: number; // eg -32602
+      message: string; // eg "At least one of the url or domain needs to be specified"
+    } | { // if success response
+      success: true;
+    });
+    if ("success" in res === false && "message" in res) {
+      await this.done(res.message);
     }
   }
 

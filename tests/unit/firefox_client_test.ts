@@ -93,6 +93,12 @@ Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
     });
   });
 
+  Rhum.testSuite("setCookie()", () => {
+    Rhum.testCase("Should set the cookie value correctly", async () => {
+      // Covered in integration tests
+    });
+  });
+
   Rhum.testSuite("goto()", () => {
     Rhum.testCase("Successfully navigates when url is correct", async () => {
       const Sinco = await FirefoxClient.build();

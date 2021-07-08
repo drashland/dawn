@@ -1,3 +1,5 @@
+// https://github.com/deepsweet/foxr
+
 import { assertEquals, iter } from "../deps.ts";
 
 // Talking as EB: There are many packets we receieve which do not mean anything to us, and to avoid bloating any logging or trying to handle events we would never use, we store them here.
@@ -473,6 +475,31 @@ export class FirefoxClient {
     if (errMsg) {
       throw new Error(errMsg);
     }
+  }
+
+  /**
+   * Set a cookie for the `url`. Will be passed across 'sessions' based
+   * from the `url`
+   *
+   * @param name - Name of the cookie, eg X-CSRF-TOKEN
+   * @param value - Value to assign to the cookie name, eg "some cryptic token"
+   * @param url - The domain to assign the cookie to, eg "https://drash.land"
+   *
+   * @example
+   * ```ts
+   * await Sinco.setCookie("X-CSRF-TOKEN", "abc123", "https://drash.land")
+   * const result = await Sinco.evaluatePage(`document.cookie`) // "X-CSRF-TOKEN=abc123"
+   * ```
+   */
+  public async setCookie(
+    name: string,
+    value: string,
+    _url: string,
+  ): Promise<void> {
+    const cookieVal = `document.cookie = "${name}=${value}"`;
+    // (internal): Ideally we'd want to use an actual domain method of the firefox devtools protocol,
+    // but there are no docs I can find about them :/ So resorting to evaluatePage for the time being
+    await this.evaluatePage(cookieVal);
   }
 
   //////////////////////////////////////////////////////////////////////////////

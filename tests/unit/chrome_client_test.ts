@@ -375,6 +375,12 @@ Rhum.testPlan("tests/unit/chrome_client_test.ts", () => {
     );
   });
 
+  Rhum.testSuite("setCookie()", () => {
+    Rhum.testCase("Should set the cookie value correctly", async () => {
+      // Covered in integration tests
+    });
+  });
+
   Rhum.testSuite("done()", () => {
     Rhum.testCase(
       "Should close the sub process eg pid on users machine",
