@@ -235,6 +235,7 @@ export class ChromeClient {
       };
     };
     const actualUrl = res.root.documentURL;
+
     if (actualUrl !== expectedUrl) { // Before we know the test will fail, close everything
       await this.done();
     }

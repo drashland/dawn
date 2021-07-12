@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+    <input hidden="true" value="{{ testFiles }}">
+    <h1 id="title">{{ projectName }}</h1>
+    <div id="container">
+        <div id="sidebar">
+            <ul>
+                <li>
+                    <p class="menu-header">Tests</p>
+                    <ul id="tests-list">
+
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div id="main">
+            <img src="https://drash.land/sinco/assets/img/sinco.svg" height="200" alt="Sinco logo">
+            <h2>Welcome to Sinco!</h2>
+            <p>Get started on running your tests, by clicking the directory or file on the left hand side.</p>
+            <p>For more information, you can view the <a href="https://drash.land/sinco">documentation</a>.</p>
+            <p>Any questions or issues, please raise them in the <a href="https://github.com/drashland/sinco">repository</a>, or contact a member of the team on our <a href="https://discord.gg/SgejNXq">Discord</a></p>
+            <p>Happy testing!</p>
+        </div>
+    </div>
+    <script>
+        window.addEventListener("DOMContentLoaded", function () {
+          const rawTestFiles = decodeURIComponent(document.querySelector('input').value)
+          const testFiles = JSON.parse(rawTestFiles)
+          let html = "<li>"
+          Object.keys(testFiles).forEach(dir => {
+            html += "<p class='menu-header-main-item'>" + dir + "</p><ul>"
+            testFiles[dir].forEach(fileName => {
+              html += "<li><p class='menu-header-sub-item'>" + fileName + "</p></li>"
+            })
+            html += "</ul></li>"
+          })
+          html += "</ul></li>"
+          document.getElementById('tests-list').innerHTML = html
+
+          // const $testDirectories = document.querySelectorAll(".menu-header-main-item")
+          // $testDirectories.forEach(elem => {
+          //   elem.addEventListener("click", async function (e) {
+          //     const dir = e.target.innerText
+          //     await fetch("http://localhost:64942/run?dir=" + dir)
+          //   })
+          // })
+          const $testFiles = document.querySelectorAll(".menu-header-sub-item")
+          $testFiles.forEach(elem => {
+            elem.addEventListener("click", async function (e) {
+              const filename = e.target.innerText
+              const dir = e.target.closest("ul").previousSibling.innerText
+              await fetch("http://localhost:64942/run?dir=" + dir + "&filename=" + filename)
+            })
+          })
+        })
+    </script>
+    <style>
+        #title {
+            background-color: #2f5be7;
+            color: #fff;
+            padding-left: 0.5em;
+            margin-top: 0;
+            margin-bottom: 0;
+            padding-bottom: 0.5em;
+            padding-top: 0.5em
+        }
+        #container {
+            display: flex;
+        }
+        #main {
+            width: 70%;
+            text-align: center;
+            margin-left: 1em;
+            margin-right: 1em;
+        }
+        #sidebar {
+            width: 30%;
+            background-color: rgb(40, 38, 51);
+            min-height: 100vh;
+            font-size: .875rem;
+        }
+        #sidebar > ul {
+            color: #f4f4f4;
+        }
+        #sidebar p {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+        #sidebar p.menu-header {
+            padding-left: 1.5em;
+            background-color: #36304a;
+            border-bottom: 1px solid #3f3955;
+        }
+        #sidebar p.menu-header-main-item {
+            padding-left: 2em;
+        }
+        #sidebar p.menu-header-sub-item {
+            padding-left: 2.5em;
+        }
+        /*#sidebar p.menu-header-main-item:hover,*/
+        #sidebar p.menu-header-sub-item:hover {
+            cursor: pointer;
+            color: #ff7700;
+        }
+        li {
+            list-style-type: none;
+        }
+        body {
+            background-color: #f4f4f4;
+            font-family: 'Nunito', Helvetica, Arial, sans-serif;
+            font-size: 1.1rem;
+            line-height: 2.25rem;
+            padding: 0;
+            margin: 0
+        }
+        span {
+            display: flex;
+        }
+        ul {
+            padding: 0;
+            margin: 0
+        }
+        a {
+            color: #ff7700;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #333333
+        }
+    </style>
+</body>
+</html>

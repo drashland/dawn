@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+    <input hidden="true" value="{{ testFiles }}">
+    <h1 id="title">{{ projectName }}</h1>
+    <div id="container">
+        <div id="sidebar">
+            <ul id="tests-list">
+            </ul>
+        </div>
+        <div id="main">
+            <div id="loading">
+                <div class="ripple ripple1"></div>
+                <div class="ripple ripple2"></div>
+                <div class="ripple ripple3"></div>
+                <div class="ripple ripple4"></div>
+            </div>
+            <iframe id="the-iframe" src=""></iframe>
+        </div>
+    </div>
+    <style>
+        #loading {
+            margin-left: 34vw;
+            /* margin-right: 35vw; */
+            margin-top: 27%;
+            position: fixed;
+            /*left: 0;*/
+            /*top: 0;*/
+            /*width: 100%;*/
+            /*height: 100%;*/
+            background-color: #fff;
+            z-index: 10000;
+        }
+        #loading .ripple {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            position: absolute;
+            top: -webkit-calc(50% - 30px);
+            top: calc(50% - 30px);
+            left: -webkit-calc(50% - 30px);
+            left: calc(50% - 30px);
+            -webkit-animation-name: ripple;
+            animation-name: ripple;
+            -webkit-animation-duration: 1s;
+            animation-duration: 1s;
+            -webkit-animation-timing-function: ease-in-out;
+            animation-timing-function: ease-in-out;
+            -webkit-animation-direction: alternate-reverse;
+            animation-direction: alternate-reverse;
+            -webkit-animation-iteration-count: infinite;
+            animation-iteration-count: infinite;
+            -webkit-transform: scale(0);
+            -ms-transform: scale(0);
+            transform: scale(0);
+            opacity: 0.6;
+        }
+        #loading .ripple1 {
+            background-color: rgba(47, 231, 177, 0.4);
+        }
+        #loading .ripple2 {
+            animation-delay: -250ms;
+            background-color: rgba(47, 231, 177, 0.5);
+        }
+        #loading .ripple3 {
+            animation-delay: -500ms;
+            background-color: rgba(47, 91, 231, 0.6);
+        }
+        #loading .ripple4 {
+            animation-delay: -750ms;
+            background-color: #2F5BE7;
+        }
+        @-webkit-keyframes ripple {
+            to {
+                -webkit-transform: scale(1);
+                transform: scale(1);
+            }
+        }
+        @keyframes ripple {
+            to {
+                -webkit-transform: scale(1);
+                transform: scale(1);
+            }
+        }
+        #title {
+            background-color: #2f5be7;
+            color: #fff;
+            padding-left: 0.5em;
+            margin-top: 0;
+            margin-bottom: 0;
+            padding-bottom: 0.5em;
+            padding-top: 0.5em
+        }
+        #container {
+            display: flex;
+        }
+        #main {
+            width: 70%;
+            text-align: center;
+            margin-left: 1em;
+            margin-right: 1em;
+            margin-top: 1em;
+        }
+        #sidebar {
+            width: 30%;
+            background-color: rgb(40, 38, 51);
+            min-height: 91.5vh;
+            font-size: .875rem;
+        }
+        #sidebar > ul {
+            color: #f4f4f4;
+        }
+        #sidebar p {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+        #sidebar p.menu-header {
+            padding-left: 1.5em;
+            background-color: #36304a;
+            border-bottom: 1px solid #3f3955;
+        }
+        #sidebar p.menu-header-main-item {
+            padding-left: 2em;
+        }
+        #sidebar p.menu-header-sub-item {
+            padding-left: 2.5em;
+        }
+        /*#sidebar p.menu-header-main-item:hover,*/
+        /*#sidebar p.menu-header-sub-item:hover {*/
+        /*    cursor: pointer;*/
+        /*    color: #ff7700;*/
+        /*}*/
+        li {
+            list-style-type: none;
+        }
+        body {
+            background-color: #f4f4f4;
+            font-family: 'Nunito', Helvetica, Arial, sans-serif;
+            font-size: 1.1rem;
+            line-height: 2.25rem;
+            padding: 0;
+            margin: 0
+        }
+        span {
+            display: flex;
+        }
+        ul {
+            padding: 0;
+            margin: 0
+        }
+        a {
+            color: #ff7700;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #333333
+        }
+        iframe {
+            width: 100%;
+            border: none;
+            height: 82vh;
+            box-shadow: 0px 0px 10px 1px #2f5be7;
+            display: none;
+        }
+        .red {
+            color: #ff4f4f !important;
+        }
+        .green {
+            color: #019e01 !important;
+        }
+    </style>
+</body>
+<script>
+  window.addEventListener("DOMContentLoaded", async function () {
+    // Display the list of tests in the sidebar. This data is is  placed into the view from the server so we can easily extract it
+    const testFiles = JSON.parse(decodeURIComponent(document.querySelector('input').value))
+    let html = ""
+    Object.keys(testFiles).forEach(dir => {
+      html += `<li><p class="menu-header">${dir}</p><ul>`
+      testFiles[dir].forEach(filename => {
+        html += `<li><p class="menu-header-main-item">${filename}</p><ul data-result-set="${filename}"></ul></li>`
+      })
+      html += "</ul></li>"
+    })
+    document.getElementById("tests-list").innerHTML = html
+
+    let iframeLoaded = false
+
+    // Listen for events when running the tests, so we can display output in the sidebar
+    const client =  new WebSocket("ws://localhost:64943")
+    client.onopen = function () {
+      client.send(JSON.stringify({
+        connect_to: ["test-success", "test-failure", "new-debug-url", "test-case-failure-result"]
+      }))
+    }
+    client.onmessage =  function (evt) {
+      if (evt.data.indexOf("Connected to") === 0) {
+        return
+      }
+      const data = JSON.parse(evt.data)
+      const message = data.message
+      const list = document.querySelector(`ul[data-result-set="${message.filename}"`)
+      if (data.to === "test-success") {
+        console.log('got test success')
+        let html = ""
+        if (message.testCase) {
+          html = `<li><p data-case-name="${message.testName}" class="menu-header-sub-item green">${message.testName}</p></li>`
+        }
+        if (message.testResult) {
+          html = `<li><p class='menu-header-sub-item'>Passed: ${message.testResult.passed}; Failed: ${message.testResult.failed}</p></li>`
+        }
+        list.innerHTML = list.innerHTML + html
+      }
+      if (data.to === "test-failure") {
+        let html = ""
+        if (message.testCase) {
+          html = `<li><p data-case-name="${message.testName}" class="menu-header-sub-item red">${message.testName}</p></li>`
+        }
+        if (message.testResult) {
+          html = "<li><p class='menu-header-sub-item'>" + "Passed: " + message.testResult.passed + "; Failed: " + message.testResult.failed + "</p></li>"
+        }
+        list.innerHTML = list.innerHTML + html
+      }
+      if (data.to === "new-debug-url") {
+        const url = message.wsUrl
+        document.getElementById("the-iframe").src = url
+        if (iframeLoaded === false) {
+          document.getElementById('loading').style.display = "none"
+          document.getElementById("the-iframe").style.display = "block"
+          iframeLoaded = true
+        }
+      }
+      if (data.to === "test-case-failure-result") {
+        console.log(message)
+            const caseElem = document.querySelector(`p[data-case-name="${decodeURIComponent(message.testCaseName)}"]`)
+            message.message.forEach(msg => {
+              caseElem.innerHTML += "<p>" + message.message  + "</p>"
+            })
+      }
+    }
+
+    // Run the test(s)
+    const urlParams = new URLSearchParams(window.location.search);
+    const filename = urlParams.get('filename');
+    const dir = urlParams.get("dir")
+    const jsonData = { dir }
+    if (filename) {
+      jsonData.filename = filename
+    }
+    const data = JSON.stringify(jsonData)
+    await fetch("http://localhost:64942/tests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": data.length
+      },
+      body: data
+    })
+  })
+</script>
+</html>

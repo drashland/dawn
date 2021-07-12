@@ -15,6 +15,11 @@ export const preReleaseFiles = [
     replaceTheRegex: regexes.egg_json,
     replaceWith: `"version": "{{ thisModulesLatestVersion }}"`,
   },
+  {
+    filename: "./cli/commands/version.ts",
+    replaceTheRegex: regexes.const_statements,
+    replaceWith: "version = \"{{ thisModulesLatestVersion }}\""
+  }
 ];
 
 export const bumperFiles = [];
