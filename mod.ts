@@ -1,27 +1,18 @@
-import {
-  BuildOptions as ChromeBuildOptions,
-  ChromeClient,
-} from "./src/chrome_client.ts";
-import {
-  BuildOptions as FirefoxBuildOptions,
-  FirefoxClient,
-} from "./src/firefox_client.ts";
+import { ChromeClient } from "./src/chrome_client.ts";
+import { FirefoxClient } from "./src/firefox_client.ts";
+import { BuildOptions } from "./src/client.ts";
 
 export { ChromeClient, FirefoxClient };
 
 type Browsers = "firefox" | "chrome";
 
-type Options = (FirefoxBuildOptions | ChromeBuildOptions);
-
 export async function buildFor(
   browser: Browsers,
-  options?: Options,
+  options?: BuildOptions,
 ): Promise<ChromeClient | FirefoxClient> {
   if (browser === "firefox") {
-    const Firefox = await FirefoxClient.build(options);
-    return Firefox;
+    return await FirefoxClient.build(options);
   } else {
-    const Chrome = await ChromeClient.build(options);
-    return Chrome;
+    return await ChromeClient.build(options);
   }
 }

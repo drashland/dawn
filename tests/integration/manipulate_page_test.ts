@@ -62,9 +62,8 @@ Deno.test("Firefox: Manipulate Webpage", async () => {
     // deno-lint-ignore no-undef
     return prevBody === document.body.children.length - 1;
   });
-  assertEquals(updatedBody, true);
-
   await Sinco.done();
+  assertEquals(updatedBody, true);
 });
 
 Deno.test("Firefox: Evaluating a script - Tutorial for this feature in the documentation works", async () => {

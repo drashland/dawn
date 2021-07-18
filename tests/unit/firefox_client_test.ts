@@ -1,33 +1,45 @@
 import { Rhum } from "../deps.ts";
 import { FirefoxClient } from "../../mod.ts";
-import {
-  defaultBuildOptions,
-  getFirefoxPath,
-} from "../../src/firefox_client.ts";
+import { getFirefoxPath } from "../../src/firefox_client.ts";
+import { existsSync } from "../../src/utility.ts";
+import { deferred } from "../../deps.ts";
 
 Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
   Rhum.testSuite("build()", () => {
     Rhum.testCase("Will start firefox headless as a subprocess", async () => {
       const Sinco = await FirefoxClient.build();
-      // If it hasn't, connecting will throw an error
-      const conn = await Deno.connect({
-        hostname: defaultBuildOptions.hostname,
-        port: defaultBuildOptions.debuggerServerPort,
-      });
-      conn.close();
+      const res = await fetch("http://127.0.0.1:9293/json/list");
+      const json = await res.json();
+      // Our ws client should be able to connect if the browser is running
+      const client = new WebSocket(json[1]["webSocketDebuggerUrl"]);
+      const promise = deferred();
+      client.onopen = function () {
+        client.close();
+      };
+      client.onclose = function () {
+        promise.resolve();
+      };
+      await promise;
       await Sinco.done();
     });
     Rhum.testCase(
       "Uses the port when passed in to the parameters",
       async () => {
         const Sinco = await FirefoxClient.build({
-          debuggerServerPort: 9999,
+          debuggerPort: 9999,
         });
-        const conn = await Deno.connect({
-          hostname: defaultBuildOptions.hostname,
-          port: 9999,
-        });
-        conn.close();
+        const res = await fetch("http://localhost:9999/json/list");
+        const json = await res.json();
+        // Our ws client should be able to connect if the browser is running
+        const client = new WebSocket(json[1]["webSocketDebuggerUrl"]);
+        const promise = deferred();
+        client.onopen = function () {
+          client.close();
+        };
+        client.onclose = function () {
+          promise.resolve();
+        };
+        await promise;
         await Sinco.done();
       },
     );
@@ -50,13 +62,31 @@ Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
         const Sinco = await FirefoxClient.build({
           binaryPath: getFirefoxPath(),
         });
-        // If it hasn't, connecting will throw an error
-        const conn = await Deno.connect({
-          hostname: defaultBuildOptions.hostname,
-          port: defaultBuildOptions.debuggerServerPort,
-        });
-        conn.close();
+        const res = await fetch("http://localhost:9293/json/list");
+        const json = await res.json();
+        // Our ws client should be able to connect if the browser is running
+        const client = new WebSocket(json[1]["webSocketDebuggerUrl"]);
+        const promise = deferred();
+        client.onopen = function () {
+          client.close();
+        };
+        client.onclose = function () {
+          promise.resolve();
+        };
+        await promise;
         await Sinco.done();
+      },
+    );
+    Rhum.testCase(
+      "Should create and delete a temp path for the firefox profile",
+      async () => {
+        const Sinco = await FirefoxClient.build();
+        const prop = Reflect.get(Sinco, "firefox_profile_path");
+        const existsOnCreate = existsSync(prop);
+        await Sinco.done();
+        const existsOnDestroy = existsSync(prop);
+        Rhum.asserts.assertEquals(existsOnCreate, true);
+        Rhum.asserts.assertEquals(existsOnDestroy, false);
       },
     );
   });
@@ -115,7 +145,7 @@ Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
         await Sinco.done();
         Rhum.asserts.assertEquals(
           msg,
-          'net::ERR_NAME_NOT_RESOLVED: Error for navigating to page "https://hellaDOCSWOWThispagesurelycantexist.biscuit"',
+          'NS_ERROR_UNKNOWN_HOST: Error for navigating to page "https://hellaDOCSWOWThispagesurelycantexist.biscuit"',
         );
       },
     );
@@ -180,8 +210,7 @@ Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
         await Sinco.done();
         Rhum.asserts.assertEquals(error, {
           errored: true,
-          msg:
-            "DOMException: Document.querySelector: 'q;q' is not a valid selector",
+          msg: "Document.querySelector: 'q;q' is not a valid selector",
         });
       },
     );
@@ -203,7 +232,7 @@ Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
         await Sinco.done();
         Rhum.asserts.assertEquals(error, {
           errored: true,
-          msg: `Error: document.querySelector(...) is null`,
+          msg: `document.querySelector(...) is null`,
         });
       },
     );
@@ -237,8 +266,8 @@ Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
         await Sinco.goTo("https://chromestatus.com");
         await Sinco.type('input[placeholder="Filter"]', "hello world");
         const val = await Sinco.getInputValue('input[placeholder="Filter"]');
-        Rhum.asserts.assertEquals(val, "hello world");
         await Sinco.done();
+        Rhum.asserts.assertEquals(val, "hello world");
       },
     );
     Rhum.testCase(
@@ -259,8 +288,7 @@ Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
         await Sinco.done();
         Rhum.asserts.assertEquals(error, {
           errored: true,
-          msg:
-            `DOMException: Document.querySelector: 'q;q' is not a valid selector`,
+          msg: `Document.querySelector: 'q;q' is not a valid selector`,
         });
       },
     );
@@ -282,7 +310,7 @@ Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
         await Sinco.done();
         Rhum.asserts.assertEquals(error, {
           errored: true,
-          msg: `Error: document.querySelector(...) is null`,
+          msg: `document.querySelector(...) is null`,
         });
       },
     );
@@ -325,8 +353,7 @@ Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
         await Sinco.done();
         Rhum.asserts.assertEquals(error, {
           errored: true,
-          msg:
-            `DOMException: Document.querySelector: 'q;q' is not a valid selector`,
+          msg: `Document.querySelector: 'q;q' is not a valid selector`,
         });
       },
     );
@@ -348,7 +375,7 @@ Rhum.testPlan("tests/unit/firefox_client_test.ts", () => {
         await Sinco.done();
         Rhum.asserts.assertEquals(error, {
           errored: true,
-          msg: `Error: document.querySelector(...) is null`,
+          msg: `document.querySelector(...) is null`,
         });
       },
     );

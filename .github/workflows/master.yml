@@ -14,15 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install Deno
-        uses: denolib/setup-deno@v2
-
       - name: Run Docker Tests
         run: |
           cd tests/integration/docker_test
           docker-compose up -d
           docker exec drivers deno test -A --config tsconfig.json tests/integration
-          docker exec drivers deno test -A --config tsconfig.json tests/unit
+          docker exec drivers deno test -A --config tsconfig.json tests/unit/chrome_client_test.ts
+          docker exec drivers deno test -A --config tsconfig.json tests/unit/firefox_client_test.ts
+          docker exec drivers deno test -A --config tsconfig.json tests/unit/mod_test.ts
+
 
   tests:
     strategy:
@@ -34,7 +34,9 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install Deno
-        uses: denolib/setup-deno@v2
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: vx.x.x
 
       - name: Run Integration Tests
         run: |
@@ -42,34 +44,9 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          deno test -A tests/unit --config tsconfig.json
-
-#      - name: Install Rhum
-#        run: deno install -A https://raw.githubusercontent.com/drashland/rhum/rhum-cli/mod.ts
-#
-#      - name: Unit
-#        if: matrix.os != 'windows-latest'
-#        run: |
-#          export PATH="~/.deno/bin:$PATH"
-#          rhum-cli tests/unit/
-#
-#      - name: Integration
-#        if: matrix.os != 'windows-latest'
-#        run: |
-#          export PATH="~/.deno/bin:$PATH"
-#          rhum-cli tests/integration
-#
-#      - name: Unit Tests (windows)
-#        if: matrix.os == 'windows-latest'
-#        run: |
-#          $env:Path += ";C:\Users\runneradmin\.deno\bin"
-#          rhum-cli tests/unit
-#
-#      - name: Integration Tests (windows)
-#        if: matrix.os == 'windows-latest'
-#        run: |
-#          $env:Path += ";C:\Users\runneradmin\.deno\bin"
-#          rhum-cli tests/integration
+          deno test -A --config tsconfig.json tests/unit/chrome_client_test.ts
+          deno test -A --config tsconfig.json tests/unit/firefox_client_test.ts
+          deno test -A --config tsconfig.json tests/unit/mod_test.ts
 
   linter:
     # Only one OS is required since fmt is cross platform
@@ -79,10 +56,12 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install Deno
-        uses: denolib/setup-deno@v2
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: vx.x.x
 
       - name: Lint
-        run: deno lint --unstable
+        run: deno lint
 
       - name: Formatter
         run: deno fmt --check
